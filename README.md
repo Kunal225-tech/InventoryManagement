@@ -14,7 +14,7 @@ An Android Inventory Management application developed using **Kotlin**, **XML**,
 - Automatic inventory value calculation
 - Low stock monitoring
 - Offline data storage using Room Database
-- Clean and responsive Material Design UI
+- Clean and responsive Material and very efficient  UI
 
 ---
 
