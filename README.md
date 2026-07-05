@@ -107,9 +107,9 @@ git clone https://github.com/YOUR_GITHUB_USERNAME/InventoryManagement.git
 
 ---
 
-## Author
+## Authors
 
-**Kunal Kishore**
+**Kunal Kishore & Avanish Anand**
 
 B.Tech Computer Science Engineering
 
