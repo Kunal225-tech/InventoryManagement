@@ -107,29 +107,54 @@ class ProductListFragment : Fragment() {
     }
 
     private fun updateCategoryChips(categories: List<String>) {
-        val allChip = binding.chipAll
+        // Only update if the categories actually changed (excluding the "All" chip)
+        // For simplicity in this project, we can clear and re-add, but we'll do it carefully
+        val currentCategories = binding.chipGroupCategories.children
+            .filter { it.id != R.id.chip_all }
+            .map { (it as Chip).text.toString() }
+            .toList()
+
+        if (currentCategories == categories) return
+
+        // Save selection if any
+        val selectedChip = binding.chipGroupCategories.findViewById<Chip>(binding.chipGroupCategories.checkedChipId)
+        val selectedText = selectedChip?.text?.toString()
+
         binding.chipGroupCategories.removeAllViews()
+        
+        // Re-add All Chip
+        val allChip = Chip(requireContext(), null, com.google.android.material.R.attr.chipStyle).apply {
+            id = R.id.chip_all
+            text = "All Items"
+            isCheckable = true
+            isChecked = selectedText == null || selectedText == "All Items"
+            setOnCheckedChangeListener { _, isChecked ->
+                if (isChecked) viewModel.setCategoryFilter(null)
+            }
+        }
         binding.chipGroupCategories.addView(allChip)
 
         categories.forEach { category ->
-            val chip = Chip(requireContext(), null, com.google.android.material.R.attr.chipStyle)
-            chip.text = category
-            chip.isCheckable = true
-            chip.setOnCheckedChangeListener { _, isChecked ->
-                if (isChecked) {
-                    viewModel.setCategoryFilter(category)
-                } else if (!binding.chipGroupCategories.children.any { (it as Chip).isChecked }) {
-                    binding.chipAll.isChecked = true
-                    viewModel.setCategoryFilter(null)
+            val chip = Chip(requireContext(), null, com.google.android.material.R.attr.chipStyle).apply {
+                text = category
+                isCheckable = true
+                isChecked = selectedText == category
+                setOnCheckedChangeListener { _, isChecked ->
+                    if (isChecked) {
+                        viewModel.setCategoryFilter(category)
+                    } else {
+                        // Check if any other chip is checked
+                        val noneChecked = !binding.chipGroupCategories.children
+                            .filterIsInstance<Chip>()
+                            .any { it.isChecked }
+                        if (noneChecked) {
+                            binding.chipAll.isChecked = true
+                            viewModel.setCategoryFilter(null)
+                        }
+                    }
                 }
             }
             binding.chipGroupCategories.addView(chip)
-        }
-        
-        allChip.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked) {
-                viewModel.setCategoryFilter(null)
-            }
         }
     }
 

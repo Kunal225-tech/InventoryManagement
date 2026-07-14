@@ -10,10 +10,14 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.navigation.fragment.findNavController
 import com.example.inventorymanagement.R
 import com.example.inventorymanagement.data.InventoryDatabase
 import com.example.inventorymanagement.data.ProductRepository
+import com.example.inventorymanagement.data.UserRepository
+import com.example.inventorymanagement.data.UserSession
 import com.example.inventorymanagement.databinding.FragmentDashboardBinding
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import java.text.NumberFormat
 import java.util.*
 
@@ -25,6 +29,11 @@ class DashboardFragment : Fragment() {
     private val viewModel: InventoryViewModel by viewModels {
         val database = InventoryDatabase.getDatabase(requireContext())
         InventoryViewModelFactory(ProductRepository(database.productDao()))
+    }
+
+    private val authViewModel: AuthViewModel by viewModels {
+        val database = InventoryDatabase.getDatabase(requireContext())
+        AuthViewModelFactory(UserRepository(database.userDao()), UserSession(requireContext()))
     }
 
     override fun onCreateView(
@@ -62,6 +71,40 @@ class DashboardFragment : Fragment() {
         viewModel.outOfStockCount.observe(viewLifecycleOwner) { outCount ->
             updateStatusMessage(viewModel.lowStockCount.value ?: 0, outCount)
         }
+
+        authViewModel.navigationEvent.observe(viewLifecycleOwner) { event ->
+            event?.let {
+                when (it) {
+                    is AuthViewModel.NavigationEvent.NavigateToLogin -> {
+                        findNavController().navigate(R.id.action_global_loginFragment)
+                        authViewModel.onNavigationHandled()
+                    }
+                    else -> {}
+                }
+            }
+        }
+
+        binding.toolbar.inflateMenu(R.menu.menu_dashboard)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_logout -> {
+                    showLogoutConfirmation()
+                    true
+                }
+                else -> false
+            }
+        }
+    }
+
+    private fun showLogoutConfirmation() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Logout")
+            .setMessage("Are you sure you want to logout?")
+            .setNegativeButton("Cancel", null)
+            .setPositiveButton("Logout") { _, _ ->
+                authViewModel.logout()
+            }
+            .show()
     }
 
     private fun updateStatusMessage(lowCount: Int, outCount: Int) {
